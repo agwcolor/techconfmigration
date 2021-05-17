@@ -71,6 +71,9 @@ def notification():
             ## TODO: Refactor This logic into an Azure Function
             ## Code below will be replaced by a message queue
             #################################################
+            
+            ##Non-refactored code
+            """
             attendees = Attendee.query.all()
 
             for attendee in attendees:
@@ -80,8 +83,14 @@ def notification():
             notification.completed_date = datetime.utcnow()
             notification.status = 'Notified {} attendees'.format(len(attendees))
             db.session.commit()
+            ##End Non-Refactored code
+            """
+            
             # TODO Call servicebus queue_client to enqueue notification ID
-
+            # queue_client.send_message(notification.id)
+            message = Message("{}".format(notification.id))
+            queue_sender = queue_client.get_sender()
+            messageResponse = queue_sender.send(message)
             #################################################
             ## END of TODO
             #################################################
@@ -94,7 +103,7 @@ def notification():
         return render_template('notification.html')
 
 
-
+'''
 def send_email(email, subject, body):
     if not app.config.get('SENDGRID_API_KEY')
         message = Mail(
@@ -105,3 +114,4 @@ def send_email(email, subject, body):
 
         sg = SendGridAPIClient(app.config.get('SENDGRID_API_KEY'))
         sg.send(message)
+'''
