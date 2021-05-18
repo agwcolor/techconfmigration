@@ -25,7 +25,7 @@ def main(msg: func.ServiceBusMessage):
 
     conn = psycopg2.connect(conn_string)
     print("Connection established")
-    
+
     cur = conn.cursor()
     try:
         # TODO: Get notification message and subject from database using the notification_id
