@@ -1,6 +1,5 @@
-# DO NOT include azure-functions-worker in this file
-# The Python Worker is managed by Azure Functions platform
-# Manually managing azure-functions-worker may cause unexpected issues
-
-azure-functions
-psycopg2-binary
+azure-functions==1.7.0
+psycopg2-binary==2.8.6
+python-http-client==3.3.2
+sendgrid==6.7.0
+starkbank-ecdsa==1.1.0

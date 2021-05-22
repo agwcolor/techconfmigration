@@ -1,11 +1,13 @@
-from app import app, db, queue_client
+from app import app, db, connstr, queue_name
 from datetime import datetime
 from app.models import Attendee, Conference, Notification
 from flask import render_template, session, request, redirect, url_for, flash, make_response, session
-from azure.servicebus import Message
+# from azure.servicebus import Message
+from azure.servicebus import ServiceBusClient, ServiceBusMessage
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 import logging
+
 
 @app.route('/')
 def index():
@@ -30,9 +32,10 @@ def registration():
         try:
             db.session.add(attendee)
             db.session.commit()
-            session['message'] = 'Thank you, {} {}, for registering!'.format(attendee.first_name, attendee.last_name)
+            session['message'] = 'Thank you, {} {}, for registering!'.format(
+                attendee.first_name, attendee.last_name)
             return redirect('/Registration')
-        except:
+        except BaseException:
             logging.error('Error occured while saving your information')
 
     else:
@@ -41,7 +44,8 @@ def registration():
             session.pop('message', None)
             return render_template('registration.html', message=message)
         else:
-             return render_template('registration.html')
+            return render_template('registration.html')
+
 
 @app.route('/Attendees')
 def attendees():
@@ -53,6 +57,7 @@ def attendees():
 def notifications():
     notifications = Notification.query.order_by(Notification.id).all()
     return render_template('notifications.html', notifications=notifications)
+
 
 @app.route('/Notification', methods=['POST', 'GET'])
 def notification():
@@ -66,14 +71,15 @@ def notification():
         try:
             db.session.add(notification)
             db.session.commit()
-
+            (print, "Saved item to database.")
             ##################################################
-            ## TODO: Refactor This logic into an Azure Function
-            ## Code below will be replaced by a message queue
+            # TODO: Refactor This logic into an Azure Function
+            # Code below will be replaced by a message queue
             #################################################
 
-            ##Non-refactored code
+            # Non-refactored code
 
+            """
             attendees = Attendee.query.all()
 
             for attendee in attendees:
@@ -86,27 +92,41 @@ def notification():
             ##End Non-Refactored code
 
             """
+
             # TODO Call servicebus queue_client to enqueue notification ID
-            # queue_client.send_message(notification.id)
+            """
+            # Servicebus V0.50
             message = Message("{}".format(notification.id))
             queue_sender = queue_client.get_sender()
-            messageResponse = queue_sender.send(message)
-            #################################################
-            ## END of TODO
-            #################################################
+            queue_sender.send(message)
             """
+            # Servicebus V7
+            print("Logging 2")
+            with ServiceBusClient.from_connection_string(connstr) as client:
+                with client.get_queue_sender(queue_name) as sender:
+                    # Sending a single message
+                    message = ("{}".format(notification.id))
+                    single_message = ServiceBusMessage(message)
+                    print(single_message, " is the single_message")
+                    print(type(single_message), " is the single_message")
+                    sender.send_messages(single_message)
+            #################################################
+            # END of TODO
+            #################################################
+            print("Logging 3")
             return redirect('/Notifications')
-        except :
+        except Exception:
             logging.error('log unable to save notification')
 
     else:
+        print("Logging 4")
         return render_template('notification.html')
 
 
-
+"""
 # move to Azure Function
 def send_email(email, subject, body):
-    if not app.config.get('SENDGRID_API_KEY')
+    if not app.config.get('SENDGRID_API_KEY'):
         message = Mail(
             from_email=app.config.get('ADMIN_EMAIL_ADDRESS'),
             to_emails=email,
@@ -115,3 +135,4 @@ def send_email(email, subject, body):
 
         sg = SendGridAPIClient(app.config.get('SENDGRID_API_KEY'))
         sg.send(message)
+"""
