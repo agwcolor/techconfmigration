@@ -8,10 +8,7 @@ from sendgrid.helpers.mail import Mail
 
 
 def main(msg: func.ServiceBusMessage):
-    print("Starting the ServiceBusMessage function")
     notification_id = int(msg.get_body().decode('utf-8'))
-    #notification_id = msg.get_body().decode('utf-8')
-    print(notification_id)
     logging.info('Python ServiceBus queue trigger processed message: %s',
                  notification_id)
 
@@ -23,17 +20,17 @@ def main(msg: func.ServiceBusMessage):
     password = os.environ.get('DB_PASSWORD')
 
     # Construct connection string
-    conn_string = "host={} user={} dbname={} password={}".format(
+    conn_string = "host={0} user={1} dbname={2} password={3}".format(
         host, user, dbname, password)
+    logging.info('Database is here: %s',
+                 conn_string)
 
     conn = psycopg2.connect(conn_string)
-    print("Connection established", conn_string)
 
     cur = conn.cursor()
     try:
         # TODO: Get notification message and subject from database using the
         # notification_id
-        # sql1 = "SELECT message, subject FROM notification WHERE id=?"
         cur.execute('SELECT "message", "subject" FROM "notification" WHERE "id"=%s;', (notification_id,))
         message, subject = cur.fetchone()
         logging.error('*** Message: %s -- Subject: %s', message, subject)
@@ -42,13 +39,7 @@ def main(msg: func.ServiceBusMessage):
         sql2 = "SELECT email, first_name FROM attendee;"
         cur.execute(sql2)
         attendee_details = cur.fetchall()
-        print(attendee_details)
-        '''
-        logging.error(
-            '*** email: %s -- first_name: %s',
-            attendee_details[0][0],
-            attendee_details[0][0])
-        '''
+
         # TODO: Loop through each attendee and send an email with a
         # personalized subject
 
@@ -63,14 +54,13 @@ def main(msg: func.ServiceBusMessage):
 
                 sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
                 sg.send(message)
-            
+
         # TODO: Update the notification table by setting the completed date and
         # updating the status with the total number of attendees notified
         date = datetime.utcnow()
         cur.execute('UPDATE "notification" SET "completed_date"=%s WHERE "id"=%s;', (date, notification_id))
 
         status = 'Notified {} attendees'.format(len(attendee_details))
-        print(status, " is the status")
         cur.execute('UPDATE "notification" SET "status"=%s WHERE "id"=%s;', (status, notification_id))
         conn.commit()
 

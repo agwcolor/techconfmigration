@@ -2,10 +2,9 @@ from app import app, db, connstr, queue_name
 from datetime import datetime
 from app.models import Attendee, Conference, Notification
 from flask import render_template, session, request, redirect, url_for, flash, make_response, session
-# from azure.servicebus import Message
 from azure.servicebus import ServiceBusClient, ServiceBusMessage
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+# from sendgrid import SendGridAPIClient
+# from sendgrid.helpers.mail import Mail
 import logging
 
 
@@ -77,7 +76,7 @@ def notification():
             # Code below will be replaced by a message queue
             #################################################
 
-            # Non-refactored code
+            # Non-refactored code - This logic moved to an Azure Function
 
             """
             attendees = Attendee.query.all()
@@ -94,13 +93,7 @@ def notification():
             """
 
             # TODO Call servicebus queue_client to enqueue notification ID
-            """
-            # Servicebus V0.50
-            message = Message("{}".format(notification.id))
-            queue_sender = queue_client.get_sender()
-            queue_sender.send(message)
-            """
-            # Servicebus V7
+            # Using azure-ervicebus V7
             print("Logging 2")
             with ServiceBusClient.from_connection_string(connstr) as client:
                 with client.get_queue_sender(queue_name) as sender:
@@ -108,7 +101,6 @@ def notification():
                     message = ("{}".format(notification.id))
                     single_message = ServiceBusMessage(message)
                     print(single_message, " is the single_message")
-                    print(type(single_message), " is the single_message")
                     sender.send_messages(single_message)
             #################################################
             # END of TODO
@@ -124,7 +116,7 @@ def notification():
 
 
 """
-# move to Azure Function
+# This was moved to an Azure Function
 def send_email(email, subject, body):
     if not app.config.get('SENDGRID_API_KEY'):
         message = Mail(

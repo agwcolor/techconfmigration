@@ -63,9 +63,29 @@ Complete a month cost analysis of each Azure resource to give an estimate total 
 
 | Azure Resource | Service Tier | Monthly Cost |
 | ------------ | ------------ | ------------ |
-| *Azure Postgres Database* |     |              |
-| *Azure Service Bus*   |         |              |
-| ...                   |         |              |
+| *Azure Postgres Database* | Basic 5Gb 1 or 2 core |     $25.30 or $55.59         |
+| *Azure Service Bus Namespace*   | Basic     |     $0.05/million        |
+| *App Service*    | Free - F1  |   $0.00      |              |
+| *Storage Account* | Standard RA GRS / Cool    |$0.22    ($0.025 (per) GB - First 50 TB), ($0.20 per 10,000 data transfer) |
+| *Application Insights* | Basic - B1 | $13.14   |
+| *Function App* |  Consumption | $6 (Includes Resource & Executions @1 Million)    |
+| TOTAL (Mo)   |    -----    |    $44.71 (1coreDB) / $70.01 (2coreDB)     |
 
 ## Architecture Explanation
-This is a placeholder section where you can provide an explanation and reasoning for your architecture selection for both the Azure Web App and Azure Function.
+Reasoning for the architecture selection for the Azure Web App and Azure Function:
+
+**Azure App Service**
+
+I chose the Azure App Service (Managed Service) to create the Web App because it requires fewer administrative tasks and takes care of the server & security maintenance and updates for you. It is also usually less expensive than a lift and shift virtual machine solution.  Since this application needs less than 14 GB/RAM and less than 4 vCPUS, the Azure Web App is a good solution. Since this is a dynamic Python app vs a static one, I chose a Linux environment. It also happens to be less expensive than the Windows environment for App Services. I chose the Free plan (Dev/Test) -- F1 -- which provides 60 minutes/day compute & 1GB memory.  For the purpose of this exercise, I chose Shared Compute since I don't need to scale for this exercise.
+
+**Database**
+
+The database used is the managed service Azure Database for PostgreSQL Single server which is a good general purpose Enterprise database.
+
+**AzureFunction & Azure Service Bus**
+
+The original application processed sending a notification email to every person in an attendee database table. The larger the table, the more time-consuming the loop is to execute. One solution is to move this functionality to a background job using an Azure Function so that it does not slow down the main app.  For this application, I created an Azure Service Bus Queue Trigger Function since it is triggered via non-HTTP logic (ie. via a message queue).  One of the jobs of the Azure Service Bus is to help integrate applications. The service bus queue is set up on Azure so that the Service Bus Queue Trigger Function triggers when a message is added to its queue from within the Web App. The Azure Service Bus Queue Trigger Function also communicates with the PosgreSQL database to retrieve and insert the notification details. It also works with the SendGrid API to send all of the messages from a loop. This all operates in the background so that the main Web App is not affected.  If the queue used for the messages were to grow to larger than 80 GB, however, I would need to move to a Storage Queue.
+
+**Misc**
+
+For this project there were some interesting constraints that I did not anticipate. I was not able to contain all of my resources in the same Resource Group. I was forced to create a 2nd resource group for the Azure Function App. In addition, for the Azure Database for PostreSQL I was occasionally forced to choose 2 cores instead of 1 depending upon the day. (1vCores: $25.30 / mo | 2vCores: $55.59 / mo )
