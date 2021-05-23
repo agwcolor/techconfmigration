@@ -76,7 +76,7 @@ Reasoning for the architecture selection for the Azure Web App and Azure Functio
 
 **Azure App Service**
 
-I chose the Azure App Service (Managed Service) to create the Web App because it requires fewer administrative tasks and takes care of the server & security maintenance and updates for you. It is also usually less expensive than a lift and shift virtual machine migration.  Since this application needs less than 14 GB/RAM and less than 4 vCPUS, the Azure Web App is a good solution. Since this is a dynamic Python app vs a static one, I chose a Linux environment. Linux also happens to be less expensive than the Windows environment for App Services. I chose the Free plan (Dev/Test) -- F1 -- which provides 60 minutes/day compute & 1GB memory.  For the purpose of this exercise, I chose Shared Compute since I don't need to scale for this exercise.
+I chose the Azure App Service (Managed Service) to create the Web App because it requires fewer administrative tasks and takes care of the server & security maintenance and updates for you. Migrating to an App Service is also usually less expensive than a lift and shift virtual machine migration, although it does require time to refactor the code.  Since this application needs less than 14 GB/RAM and less than 4 vCPUS, the Azure Web App is a good solution for this tiny app. Since this is a dynamic Python app vs a static one, I chose a Linux environment. Linux also happens to be less expensive than the Windows environment for App Services. I chose the Free plan (Dev/Test) -- F1 -- which provides 60 minutes/day compute & 1GB memory.  For the purpose of this exercise, I chose Shared Compute since I don't need to scale for this exercise.
 
 **Database**
 
